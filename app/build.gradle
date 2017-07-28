@@ -11,12 +11,6 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
     signingConfigs {
         release {
             storeFile file("../debug.keystore")
@@ -30,6 +24,44 @@ android {
             storePassword "android"
             keyAlias "androiddebugkey"
             keyPassword "android"
+        }
+    }
+
+    sourceSets {
+        main() {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    buildTypes {
+        debug {
+            // 显示Log
+            buildConfigField "boolean", "LOG_DEBUG", "true"
+            // apk包名称后缀，用来区分release和debug
+            versionNameSuffix "_debug"
+            // 不混淆
+            minifyEnabled false
+            // 不压缩优化
+            zipAlignEnabled false
+            // 使用的签名信息
+            signingConfig signingConfigs.debug
+            //测试版本标识
+            manifestPlaceholders = [APP_PUBLISH_RELEASE_VALUE: "false"]
+        }
+        release {
+            // 正式版不显示log
+            buildConfigField "boolean", "LOG_DEBUG", "false"
+            // 进行混淆
+            minifyEnabled false
+            // 进行压缩优化
+            zipAlignEnabled true
+            // 使用的签名信息
+            signingConfig signingConfigs.release
+            // 使用的混淆规则文件，前面是系统默认的文件，会全部混淆，
+            // 后面是自定义不混淆的文件（domain，android四大组件，自定义view等一般是不能混淆的）
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            //正式版本标识
+            manifestPlaceholders = [APP_PUBLISH_RELEASE_VALUE: "true"]
         }
     }
 }

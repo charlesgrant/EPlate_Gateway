@@ -24,7 +24,7 @@ public class BrandRepositotyImpl extends BaseRepository implements BrandReposito
         super();
     }
 
-    private String host = "";
+    private String host = "http://172.16.189.201:8080/elicense";
 
     @Override
     public Observable<List<BrandMacAddressEntity>> getBrandListByMacAddress(List<String> macAddressList) {
@@ -38,7 +38,7 @@ public class BrandRepositotyImpl extends BaseRepository implements BrandReposito
             builder.deleteCharAt(builder.length() - 1);
         }
         params.put("mac", builder.toString());
-        String url = host + "";
+        String url = host + "/brand/queryNameByMac";
         return get(url, params, new ResponseHandler<List<BrandMacAddressEntity>>() {
             @Override
             protected List<BrandMacAddressEntity> parse(JSONObject response, String data) {
@@ -49,7 +49,7 @@ public class BrandRepositotyImpl extends BaseRepository implements BrandReposito
 
     @Override
     public Observable<List<BrandEntity>> getBrandList() {
-        String url = host + "";
+        String url = host + "/brand/queryAll";
         return get(url, newBaseRequestParams(), new ResponseHandler<List<BrandEntity>>() {
             @Override
             protected List<BrandEntity> parse(JSONObject response, String data) {

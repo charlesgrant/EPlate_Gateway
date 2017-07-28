@@ -1,12 +1,16 @@
 package com.mingbikes.eplate;
 
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.text.TextUtils;
 import android.widget.TextView;
 
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
 import com.baidu.mapapi.map.BitmapDescriptorFactory;
+import com.baidu.mapapi.map.MapStatus;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.Overlay;
@@ -15,8 +19,13 @@ import com.baidu.mapapi.map.SupportMapFragment;
 import com.baidu.mapapi.map.UiSettings;
 import com.baidu.mapapi.model.LatLng;
 import com.mingbikes.eplate.entity.ParkSpaceEntity;
+import com.mingbikes.eplate.event.PlateFoundEvent;
 import com.mingbikes.eplate.presenter.MainPresenter;
 import com.mingbikes.eplate.presenter.MainPresenterImpl;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +39,14 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        EventBus.getDefault().register(this);
+
         mPresenter = new MainPresenterImpl(this);
         setPresenter(mPresenter);
 
         initViews();
-        initMap();
+//        initMap();
+        getPresenter().getParkSpaceList();
     }
 
     private SupportMapFragment myMap;
@@ -50,11 +62,22 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
     TextView tv_ofo;
 
     private void initViews() {
-        mMapView = (MapView) findViewById(R.id.map);
+
+        myMap = SupportMapFragment.newInstance();
+        FragmentManager manager = getSupportFragmentManager();
+        FragmentTransaction ft = manager.beginTransaction();
+        ft.add(R.id.map, myMap, "map_fragment");
+        ft.commit();
 
         tv_mingbikes = (TextView) findViewById(R.id.tv_mingbikes);
         tv_m_bike = (TextView) findViewById(R.id.tv_m_bike);
         tv_ofo = (TextView) findViewById(R.id.tv_ofo);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        initMap();
     }
 
     private void initMap() {
@@ -70,41 +93,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
 
         parkIconBig = BitmapDescriptorFactory.fromResource(R.drawable.park_space_icon);
         parkIconSmall = BitmapDescriptorFactory.fromResource(R.drawable.park_space_icon_small);
-
-        showParkSpace(parkIconBig);
-    }
-
-    private void showParkSpace(BitmapDescriptor parkIcon) {
-        List<ParkSpaceEntity> parkList = null;// XMRidingMain.getInstance().getParkingPoint();
-        if (parkList == null && parkIcon != null) {
-            return;
-        }
-        List<OverlayOptions> optionsList = new ArrayList<>();
-        for (int i = 0; i < parkList.size(); i++) {
-
-            ParkSpaceEntity parkSpace = parkList.get(i);
-
-            if (parkSpace == null
-                    || TextUtils.isEmpty(parkSpace.getLatitude())
-                    || TextUtils.isEmpty(parkSpace.getLongitude())) {
-                continue;
-            }
-
-            float lat = Float.parseFloat(parkSpace.getLatitude());
-            float lng = Float.parseFloat(parkSpace.getLongitude());
-
-            Bundle b = new Bundle();
-            b.putSerializable("bike", parkSpace);
-            LatLng mLatLng = new LatLng(lat, lng);
-            MarkerOptions marker = new MarkerOptions().position(mLatLng).icon(parkIcon)
-                    .zIndex(9).draggable(true).extraInfo(b);
-            marker.animateType(MarkerOptions.MarkerAnimateType.grow);
-            optionsList.add(marker);
-        }
-        clearList(mParkPointOverlayList);
-        if (mBaiduMap != null) {
-            mParkPointOverlayList.addAll(mBaiduMap.addOverlays(optionsList));
-        }
     }
 
     private void clearList(List<Overlay> overlayList) {
@@ -123,10 +111,56 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         parkIconBig = null;
         parkIconSmall = null;
         super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onPlateFoundEvent(PlateFoundEvent event) {
+
     }
 
     @Override
     public void onParkSpaceListLoad(List<ParkSpaceEntity> parkSpaceList) {
+        showParkSpace(parkSpaceList);
+    }
 
+    private void showParkSpace(List<ParkSpaceEntity> parkSpaceList) {
+        if (parkSpaceList == null && parkIconBig != null) {
+            return;
+        }
+        List<OverlayOptions> optionsList = new ArrayList<>();
+        for (int i = 0; i < parkSpaceList.size(); i++) {
+
+            ParkSpaceEntity parkSpace = parkSpaceList.get(i);
+
+            if (parkSpace == null
+                    || TextUtils.isEmpty(parkSpace.getLatitude())
+                    || TextUtils.isEmpty(parkSpace.getLongitude())) {
+                continue;
+            }
+
+            float lat = Float.parseFloat(parkSpace.getLatitude());
+            float lng = Float.parseFloat(parkSpace.getLongitude());
+
+            Bundle b = new Bundle();
+            b.putSerializable("bike", parkSpace);
+            LatLng mLatLng = new LatLng(lat, lng);
+            MarkerOptions marker = new MarkerOptions().position(mLatLng).icon(parkIconBig)
+                    .zIndex(9).draggable(true).extraInfo(b);
+            marker.animateType(MarkerOptions.MarkerAnimateType.grow);
+            optionsList.add(marker);
+
+            if (i == 0) {
+                MapStatus.Builder builder = new MapStatus.Builder();
+                builder.target(new LatLng(lat, lng));
+                builder.zoom(17f);
+                myMap.getBaiduMap().animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+            }
+        }
+
+        clearList(mParkPointOverlayList);
+        if (mBaiduMap != null) {
+            mParkPointOverlayList.addAll(mBaiduMap.addOverlays(optionsList));
+        }
     }
 }

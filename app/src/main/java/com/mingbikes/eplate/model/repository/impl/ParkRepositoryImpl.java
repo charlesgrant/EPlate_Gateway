@@ -22,10 +22,12 @@ public class ParkRepositoryImpl extends BaseRepository implements ParkRepository
         super();
     }
 
-    private String url = "";
+    private String host = "http://172.16.189.201:8080/elicense";
 
     @Override
     public Observable<List<ParkSpaceEntity>> getParkSpaceList() {
+
+        String url = host + "/bikeParkSpace/queryAll";
         return get(url, newBaseRequestParams(), new ResponseHandler<List<ParkSpaceEntity>>() {
             @Override
             protected List<ParkSpaceEntity> parse(JSONObject response, String data) {

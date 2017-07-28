@@ -1,7 +1,7 @@
 package com.mingbikes.eplate;
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 
 import com.mingbikes.eplate.presenter.Presenter;
 
@@ -9,7 +9,7 @@ import com.mingbikes.eplate.presenter.Presenter;
  * Created by cronus-tropix on 17/7/28.
  */
 
-public class BaseActivity<T extends Presenter> extends Activity {
+public class BaseActivity<T extends Presenter> extends FragmentActivity {
 
     private T mPresenter;
     public T getPresenter() {

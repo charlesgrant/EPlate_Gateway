@@ -12,6 +12,13 @@
     <!-- 允许程序发现和配对蓝牙设备 -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
+    <!-- 访问网络，网络定位需要上网 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 获取运营商信息，用于支持提供运营商信息相关的接口 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <uses-permission android:name="android.permission.ACCESS_GPS" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

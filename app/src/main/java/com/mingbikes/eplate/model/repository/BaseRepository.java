@@ -1,5 +1,7 @@
 package com.mingbikes.eplate.model.repository;
 
+import android.util.Log;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,7 @@ public abstract class BaseRepository {
             public void call(final Subscriber<? super T> subscriber) {
                 try {
                     String responseText = get(url, params);
+                    Log.e("request", "==>" + responseText);
                     responseHandler.setResponse(responseText);
                     responseHandler.setSubscriber(subscriber);
                     responseHandler.execute();
