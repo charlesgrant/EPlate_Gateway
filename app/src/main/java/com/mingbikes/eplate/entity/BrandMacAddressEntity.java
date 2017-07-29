@@ -15,7 +15,7 @@ public class BrandMacAddressEntity {
      */
 
     private String id;
-    private String macAddress;
+    private String mac;
     private String brandName;
 
     public String getId() {
@@ -26,12 +26,12 @@ public class BrandMacAddressEntity {
         this.id = id;
     }
 
-    public String getMacAddress() {
-        return macAddress;
+    public String getMac() {
+        return mac;
     }
 
-    public void setMacAddress(String macAddress) {
-        this.macAddress = macAddress;
+    public void setMac(String mac) {
+        this.mac = mac;
     }
 
     public String getBrandName() {

@@ -23,6 +23,7 @@ public class BrandEntity {
     private String logo;
     private long createDate;
     private long updateDate;
+    private int parkCount = 0;
 
     public String getId() {
         return id;
@@ -70,5 +71,13 @@ public class BrandEntity {
 
     public void setUpdateDate(long updateDate) {
         this.updateDate = updateDate;
+    }
+
+    public int getParkCount() {
+        return parkCount;
+    }
+
+    public void setParkCount(int parkCount) {
+        this.parkCount = parkCount;
     }
 }

@@ -6,9 +6,6 @@ package com.mingbikes.eplate.event;
 
 public class PlateFoundEvent {
 
-    public static final int PLATE_OUT_TYPE = 1;
-    public static final int PLATE_IN_TYPE = 1;
-
     public String macAddress;
     public int type;
 

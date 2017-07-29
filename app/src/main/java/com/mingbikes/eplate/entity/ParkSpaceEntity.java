@@ -58,6 +58,10 @@ public class ParkSpaceEntity implements Serializable {
         this.amount = amount;
     }
 
+    public void addAmount(int _amount) {
+        this.amount += _amount;
+    }
+
     public int getCapacity() {
         return capacity;
     }

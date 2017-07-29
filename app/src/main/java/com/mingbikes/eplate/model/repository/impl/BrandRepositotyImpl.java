@@ -32,12 +32,12 @@ public class BrandRepositotyImpl extends BaseRepository implements BrandReposito
         StringBuilder builder = new StringBuilder();
         for(String macAddress : macAddressList) {
             builder.append(macAddress);
-            builder.append("#");
+            builder.append(",");
         }
         if(builder.length() > 0) {
             builder.deleteCharAt(builder.length() - 1);
         }
-        params.put("mac", builder.toString());
+        params.put("macs", builder.toString());
         String url = host + "/brand/queryNameByMac";
         return get(url, params, new ResponseHandler<List<BrandMacAddressEntity>>() {
             @Override
