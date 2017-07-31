@@ -112,6 +112,7 @@ public class MainPresenterImpl extends BasePresenter implements MainPresenter {
         mPlateFoundList.clear();
         Collection<String> list = newMap.values();
         for (String s : list) {
+            Log.e("新的-----",s);
             if (!oldMap.containsKey(s)) {
                 mPlateFoundList.add(new PlateFoundEvent(s, Event.PLATE_IN_TYPE));
             }
@@ -119,12 +120,17 @@ public class MainPresenterImpl extends BasePresenter implements MainPresenter {
 
         Collection<String> list1 = oldMap.values();
         for (String s : list1) {
+            Log.e("旧的-----",s);
             if (!newMap.containsKey(s)) {
                 mPlateFoundList.add(new PlateFoundEvent(s, Event.PLATE_OUT_TYPE));
             }
         }
 
         oldMap = newMap;
+
+        for (PlateFoundEvent event:mPlateFoundList) {
+            Log.e("----",event.macAddress+"------"+event.type);
+        }
 
         processPlateFoundData(mPlateFoundList);
     }

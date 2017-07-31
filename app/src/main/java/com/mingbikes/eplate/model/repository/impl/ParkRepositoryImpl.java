@@ -22,7 +22,7 @@ public class ParkRepositoryImpl extends BaseRepository implements ParkRepository
         super();
     }
 
-    private String host = "http://172.16.189.201:8080/elicense";
+    private String host = "http://106.15.197.255:8082/elicense";
 
     @Override
     public Observable<List<ParkSpaceEntity>> getParkSpaceList() {

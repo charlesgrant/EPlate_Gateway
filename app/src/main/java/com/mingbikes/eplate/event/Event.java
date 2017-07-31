@@ -6,6 +6,6 @@ package com.mingbikes.eplate.event;
 
 public class Event {
 
-    public static final int PLATE_OUT_TYPE = 1;
+    public static final int PLATE_OUT_TYPE = 2;
     public static final int PLATE_IN_TYPE = 1;
 }
