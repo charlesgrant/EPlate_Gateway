@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.LinearInterpolator;
@@ -17,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.BitmapDescriptor;
@@ -67,7 +69,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
     public BitmapDescriptor parkIconBig = null;
     public BitmapDescriptor parkIconSmall = null;
     /**
-     *@Fields mInfoWindow : 弹出的窗口
+     * @Fields mInfoWindow : 弹出的窗口
      */
     private InfoWindow mInfoWindow;
     private List<Overlay> mParkPointOverlayList = new ArrayList<>();
@@ -92,6 +94,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
     private LinearLayout ll_park_space_total;
     private TextView tv_park_space_total_count;
     private TextView tv_park_space_tip;
+    private TextView tv_scan;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,6 +121,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
 
         activity_main = (RelativeLayout) findViewById(R.id.activity_main);
         tv_status = (TextView) findViewById(R.id.tv_status);
+        tv_scan = (TextView) findViewById(R.id.tv_scan);
         tv_park_space_name = (TextView) findViewById(R.id.tv_park_space_name);
         tv_park_space_address = (TextView) findViewById(R.id.tv_park_space_address);
         tv_park_space_total_count = (TextView) findViewById(R.id.tv_park_space_total_count);
@@ -153,14 +157,24 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         mBaiduMap.setOnMarkerClickListener(new BaiduMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
+
+                if (mDeviceStatus != COMMON) {
+                    Toast.makeText(MainActivity.this, "切换网关，需先停止扫描或断开连接!!!", Toast.LENGTH_LONG).show();
+                    return false;
+                }
+
                 //从marker中获取info信息
                 Bundle bundle = marker.getExtraInfo();
                 ParkSpaceEntity parkSpaceEntity = (ParkSpaceEntity) bundle.getSerializable("park_space");
 
+                if (parkSpaceEntity == null) {
+                    return false;
+                }
+
                 mBluetoothAddress = parkSpaceEntity.getMacAddress();
                 mCurrentParkSpace = mParkSpaceByMacAddressMap.get(mBluetoothAddress);
                 showTitle(mCurrentParkSpace);
-                startScanForMacAddress();
+                showParkSpace(mParkSpaceList);
 
                 View view = LayoutInflater.from(getApplicationContext())
                         .inflate(R.layout.view_info, null);
@@ -191,13 +205,51 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         });
     }
 
-    private void startScanForMacAddress() {
-        if(TextUtils.isEmpty(mBluetoothAddress)) {
-            return;
+    private final int COMMON = 0;
+    private final int SCANNING = 1;
+    private final int CONNECTING = 2;
+    private final int CONNECTED = 3;
+
+    private int mDeviceStatus = COMMON;
+
+    public void onStartScanClick(View view) {
+        changeScanStatus();
+    }
+
+    private void changeScanStatus() {
+        if (mDeviceStatus == COMMON) {
+            if (startScanForMacAddress()) {
+                mDeviceStatus = SCANNING;
+                tv_scan.setText("停止扫描");
+            } else {
+                Toast.makeText(this, "未找到停车位", Toast.LENGTH_LONG).show();
+            }
+        } else if (mDeviceStatus == SCANNING) {
+            mDeviceStatus = COMMON;
+            LockManager.getInstance().stopLockScan(myOnLockSingleScanListener);
+            tv_scan.setText("开始扫描");
+        } else if (mDeviceStatus == CONNECTING) {
+            LockManager.getInstance().stopLockScan(myOnLockSingleScanListener);
+            mDeviceStatus = CONNECTED;
+            tv_scan.setText("断开连接");
+        } else if (mDeviceStatus == CONNECTED) {
+            if (mLockDevice != null) {
+                mLockDevice.disconnet();
+                mLockDevice = null;
+            }
+            mDeviceStatus = COMMON;
+            tv_scan.setText("开始扫描");
+        }
+    }
+
+    private boolean startScanForMacAddress() {
+        if (TextUtils.isEmpty(mBluetoothAddress)) {
+            return false;
         }
         setStatus("正在扫描...");
-        myOnLockSingleScanListener = new MyOnLockMacScanListener(100 * 10000, mBluetoothAddress);
+        myOnLockSingleScanListener = new MyOnLockMacScanListener(100 * 1000, mBluetoothAddress);
         LockManager.getInstance().startLockScan(myOnLockSingleScanListener);
+        return true;
     }
 
     private class MyOnLockMacScanListener extends OnLockMacScanListener {
@@ -211,7 +263,8 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
 
             setStatus("发现设备");
 
-            LockManager.getInstance().stopLockScan(myOnLockSingleScanListener);
+            mDeviceStatus = CONNECTING;
+            changeScanStatus();
 
             mLockDevice = lockDevice;
 
@@ -226,7 +279,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
             mLockDevice.updateLockConfig(mConfig);
 
             mLockDevice.setOnEventListener("connection device", new MyOnEventListener());
-            mLockDevice.connect();
+            mLockDevice.connect(true);
         }
 
         @Override
@@ -313,29 +366,33 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
                 if (park == Event.PLATE_IN_TYPE) {
                     if ("44f17829693a4822bfe16b4bef0ce397".equals(brandId)) {
                         // ofo
+                        Log.e("==", "===>ofo brandId:" + brandId);
                         showAnimation(R.drawable.icon_add, mBrandAdapter.tv_ofo_park_count);
                     } else if ("55c0ad15b25b459aa6e04ad3b57f5ee0".equals(brandId)) {
                         // mobike
+                        Log.e("==", "===>mobike brandId:" + brandId);
                         showAnimation(R.drawable.icon_add, mBrandAdapter.tv_mobike_park_count);
-                    } else {
+                    } else if ("fda506934ae24fb1afcfc6eb07647825".equals(brandId)) {
+                        Log.e("==", "===>xiaoming brandId:" + brandId);
                         showAnimation(R.drawable.icon_add, mBrandAdapter.tv_xiaoming_park_count);
                     }
                 } else {
                     if ("44f17829693a4822bfe16b4bef0ce397".equals(brandId)) {
                         // ofo
+                        Log.e("==", "===>ofo brandId:" + brandId);
                         showAnimation(R.drawable.icon_subtract, mBrandAdapter.tv_ofo_park_count);
                     } else if ("55c0ad15b25b459aa6e04ad3b57f5ee0".equals(brandId)) {
                         // mobike
+                        Log.e("==", "===>mobike brandId:" + brandId);
                         showAnimation(R.drawable.icon_subtract, mBrandAdapter.tv_mobike_park_count);
-                    } else {
+                    } else if ("fda506934ae24fb1afcfc6eb07647825".equals(brandId)) {
+                        Log.e("==", "===>xiaoming brandId:" + brandId);
                         showAnimation(R.drawable.icon_subtract, mBrandAdapter.tv_xiaoming_park_count);
                     }
                 }
             }
         }, 10);
     }
-
-    private PathMeasure mPathMeasure;
 
     private void showAnimation(int res, View view) {
 
@@ -371,10 +428,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         path.moveTo(startX, startY);
         path.cubicTo((startX + toX) / 2, startY, (point.x + (dp25)), (point.y), toX, toY);
         // mPathMeasure用来计算贝塞尔曲线的曲线长度和贝塞尔曲线中间插值的坐标，如果是true，path会形成一个闭环
-        mPathMeasure = new PathMeasure(path, false);
+        final PathMeasure pathMeasure = new PathMeasure(path, false);
 
         // 属性动画实现（从0到贝塞尔曲线的长度之间进行插值计算，获取中间过程的距离值）
-        ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, mPathMeasure.getLength());
+        ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, pathMeasure.getLength());
         valueAnimator.setDuration(1000);
 
         // 匀速线性插值器
@@ -384,7 +441,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 float value = (Float) animation.getAnimatedValue();
-                mPathMeasure.getPosTan(value, mCurrentPosition, null);
+                pathMeasure.getPosTan(value, mCurrentPosition, null);
                 iv_park.setTranslationX(mCurrentPosition[0]);
                 iv_park.setTranslationY(mCurrentPosition[1]);
             }
@@ -434,14 +491,18 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         mBrandAdapter.addList(brandList);
     }
 
+    private List<ParkSpaceEntity> mParkSpaceList = new ArrayList<>();
+
     @Override
     public void onParkSpaceListLoad(List<ParkSpaceEntity> parkSpaceList) {
 
         setStatus("获取停车位成功");
+        mParkSpaceList.clear();
+        mParkSpaceList.addAll(parkSpaceList);
 
         mParkSpaceByMacAddressMap.clear();
         for (ParkSpaceEntity entity : parkSpaceList) {
-            if(TextUtils.isEmpty(entity.getMacAddress())) {
+            if (TextUtils.isEmpty(entity.getMacAddress())) {
                 continue;
             }
             mParkSpaceByMacAddressMap.put(entity.getMacAddress(), entity);
@@ -450,7 +511,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         showParkSpace(parkSpaceList);
         setStatus("获取品牌");
         getPresenter().getBrandList();
-        startScanForMacAddress();
     }
 
     private void showParkSpace(List<ParkSpaceEntity> parkSpaceList) {
@@ -476,7 +536,10 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
             LatLng mLatLng = new LatLng(lat, lng);
             MarkerOptions marker;
 
-            if (i == 0) {
+            if(!TextUtils.isEmpty(mBluetoothAddress) && mBluetoothAddress.equals(parkSpace.getMacAddress())) {
+                marker = new MarkerOptions().position(mLatLng).icon(parkIconBig)
+                        .zIndex(9).draggable(true).extraInfo(b);
+            } else if (i == 0 && TextUtils.isEmpty(mBluetoothAddress)) {
                 marker = new MarkerOptions().position(mLatLng).icon(parkIconBig)
                         .zIndex(9).draggable(true).extraInfo(b);
             } else {
@@ -485,7 +548,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
             }
             marker.animateType(MarkerOptions.MarkerAnimateType.grow);
 
-            if (i == 0) {
+            if (i == 0 && TextUtils.isEmpty(mBluetoothAddress)) {
                 mLocationLat = lat;
                 mLocationLng = lng;
                 MapStatus.Builder builder = new MapStatus.Builder();
@@ -528,6 +591,14 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
 
             tv_park_space_tip.setText("超载" + Math.abs(freeParkSpace) + "辆");
         }
+
+        if (TextUtils.isEmpty(entity.getLatitude())
+                || TextUtils.isEmpty(entity.getLongitude())) {
+            return;
+        }
+
+        mLocationLat = Float.parseFloat(entity.getLatitude());
+        mLocationLng = Float.parseFloat(entity.getLongitude());
     }
 
     private void clearList(List<Overlay> overlayList) {
