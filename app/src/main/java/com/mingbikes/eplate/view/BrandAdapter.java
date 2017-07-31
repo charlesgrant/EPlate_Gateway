@@ -49,6 +49,10 @@ public class BrandAdapter extends BaseAdapter {
         return position;
     }
 
+    public TextView tv_ofo_park_count;
+    public TextView tv_mobike_park_count;
+    public TextView tv_xiaoming_park_count;
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder viewHolder;
@@ -61,6 +65,7 @@ public class BrandAdapter extends BaseAdapter {
             viewHolder.iv_logo = (ImageView) convertView.findViewById(R.id.iv_logo);
             viewHolder.tv_brand_name = (TextView) convertView.findViewById(R.id.tv_brand_name);
             viewHolder.tv_brand_bike_count_in_park_space = (TextView) convertView.findViewById(R.id.tv_brand_bike_count_in_park_space);
+            viewHolder.tv_brand_update_time = (TextView) convertView.findViewById(R.id.tv_brand_update_time);
 
             convertView.setTag(viewHolder);
 
@@ -72,15 +77,23 @@ public class BrandAdapter extends BaseAdapter {
 
         if(brandEntity.getName().equals("OFO")) {
             viewHolder.iv_logo.setBackgroundResource(R.drawable.ofo);
+            tv_ofo_park_count = viewHolder.tv_brand_bike_count_in_park_space;
         } else if (brandEntity.getName().equals("摩拜")) {
             viewHolder.iv_logo.setBackgroundResource(R.drawable.mobike);
+            tv_mobike_park_count = viewHolder.tv_brand_bike_count_in_park_space;
         } else {
             viewHolder.iv_logo.setBackgroundResource(R.drawable.xiaoming);
+            tv_xiaoming_park_count = viewHolder.tv_brand_bike_count_in_park_space;
         }
 
         viewHolder.tv_brand_name.setText(brandEntity.getName());
-        viewHolder.tv_brand_bike_count_in_park_space.setText(brandEntity.getParkCount() + "");
-
+        viewHolder.tv_brand_bike_count_in_park_space.setText(brandEntity.getParkCount() + "辆");
+        if(brandEntity.getUpdateDate() > 0) {
+            viewHolder.tv_brand_update_time.setVisibility(View.VISIBLE);
+            viewHolder.tv_brand_update_time.setText("最后更新时间: " + TimeUtil.getTime(brandEntity.getUpdateDate(), "-", true, true, true));
+        } else {
+            viewHolder.tv_brand_update_time.setVisibility(View.INVISIBLE);
+        }
         return convertView;
     }
 
@@ -88,6 +101,7 @@ public class BrandAdapter extends BaseAdapter {
         ImageView iv_logo;
         TextView tv_brand_name;
         TextView tv_brand_bike_count_in_park_space;
+        TextView tv_brand_update_time;
     }
 
 }

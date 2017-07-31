@@ -203,7 +203,7 @@ public class MainPresenterImpl extends BasePresenter implements MainPresenter {
                 Log.e("===", "===>PLATE_OUT_TYPE:" + event.macAddress + "," + "brandId:" + brandId);
             }
 
-            mView.onParkExtraNotify(event.type);
+            mView.onParkExtraNotify(event.type, brandId);
 
             mPlateSpaceMap.put(brandId, parkBikeCount);
         }
@@ -217,6 +217,7 @@ public class MainPresenterImpl extends BasePresenter implements MainPresenter {
             String id = mBrandList.get(index).getId();
             if (mPlateSpaceMap.containsKey(id)) {
                 mBrandList.get(index).setParkCount(mPlateSpaceMap.get(id));
+                mBrandList.get(index).setUpdateDate(System.currentTimeMillis());
             }
         }
 

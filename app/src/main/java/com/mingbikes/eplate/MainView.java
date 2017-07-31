@@ -15,7 +15,7 @@ public interface MainView {
 
     void onParkSpaceListLoad(List<ParkSpaceEntity> parkSpaceList);
 
-    void onParkExtraNotify(int park);
+    void onParkExtraNotify(int park, String brandId);
 
     void onParkSpaceBrandListLoad(List<BrandEntity> brandList);
 }
