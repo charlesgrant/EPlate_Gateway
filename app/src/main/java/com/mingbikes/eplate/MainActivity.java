@@ -77,6 +77,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
     private String mBluetoothAddress;
     private MyOnLockMacScanListener myOnLockSingleScanListener;
     private Map<String, ParkSpaceEntity> mParkSpaceByMacAddressMap = new HashMap<>();
+    private List<ParkSpaceEntity> mParkSpaceList = new ArrayList<>();
     private float mLocationLat = 0;
     private float mLocationLng = 0;
     private ParkSpaceEntity mCurrentParkSpace;
@@ -491,8 +492,6 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         mBrandAdapter.addList(brandList);
     }
 
-    private List<ParkSpaceEntity> mParkSpaceList = new ArrayList<>();
-
     @Override
     public void onParkSpaceListLoad(List<ParkSpaceEntity> parkSpaceList) {
 
@@ -536,7 +535,7 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
             LatLng mLatLng = new LatLng(lat, lng);
             MarkerOptions marker;
 
-            if(!TextUtils.isEmpty(mBluetoothAddress) && mBluetoothAddress.equals(parkSpace.getMacAddress())) {
+            if (!TextUtils.isEmpty(mBluetoothAddress) && mBluetoothAddress.equals(parkSpace.getMacAddress())) {
                 marker = new MarkerOptions().position(mLatLng).icon(parkIconBig)
                         .zIndex(9).draggable(true).extraInfo(b);
             } else if (i == 0 && TextUtils.isEmpty(mBluetoothAddress)) {
@@ -623,6 +622,9 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         }
         if (mParkSpaceByMacAddressMap != null) {
             mParkSpaceByMacAddressMap.clear();
+        }
+        if (mParkSpaceList != null) {
+            mParkSpaceList.clear();
         }
         clearList(mParkPointOverlayList);
         super.onDestroy();
