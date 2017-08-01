@@ -413,15 +413,28 @@ public class MainActivity extends BaseActivity<MainPresenter> implements MainVie
         startLoc[1] = point.y * 2 - dp25;
 
         int endLoc[] = new int[2];
-        view.getLocationInWindow(endLoc);
+        if(view != null) {
+            view.getLocationInWindow(endLoc);
+        } else {
+            ls_brand.getLocationInWindow(endLoc);
+        }
 
         // 起始点：
         float startX = startLoc[0] - parentLocation[0] + dp25 / 2;
         float startY = startLoc[1] - parentLocation[1] + dp25 / 2;
 
         // 终点坐标
-        float toX = endLoc[0] - parentLocation[0] - view.getWidth() / 2;
-        float toY = endLoc[1] - parentLocation[1] - view.getHeight() / 4;
+        int width = 0;
+        int height = 0;
+        if(view != null) {
+            width = view.getWidth();
+            height = view.getHeight();
+        } else {
+            width = ll_park_space_total.getWidth();
+            height = ll_park_space_total.getHeight();
+        }
+        float toX = endLoc[0] - parentLocation[0] - width / 2;
+        float toY = endLoc[1] - parentLocation[1] - height / 4;
 
         // 开始绘制贝塞尔曲线
         Path path = new Path();
